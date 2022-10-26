@@ -505,16 +505,6 @@ commit;
         row = db.get_row(table_name)
         with self.assertRaises(ValueError) as e: db._update_sql_vals(row())
         self.assertEqual("引数rowに更新するデータをセットしてください。", e.exception.args[0])
-    """
-    def test_update_sql_vals_id_only(self):
-        db = NtLite()
-        table_name = 'users'
-        db.exec(f"create table {table_name} (id integer not null primary key, name text not null, value real, img blob, is_male bool, birth datetime);")
-        Row = db.get_row(table_name)
-        sql, prepards = db._update_sql_vals(Row(id=0))
-        self.assertEqual(f'update {table_name} set id=? where id=?;', sql)
-        self.assertEqual((0,0), prepards)
-    """
     def test_update_sql_vals_id_name(self):
         db = NtLite()
         table_name = 'users'
@@ -538,7 +528,7 @@ commit;
         Row = db.get_row(table_name)
         sql, prepards = db._update_sql_vals(Row(id=0, birth=datetime.fromisoformat('2000-01-01T00:00:00+00:00')))
         self.assertEqual(f'update {table_name} set birth=? where id=?;', sql)
-        self.assertEqual(('2000-01-01 00:00:00',0), prepards)
+        self.assertEqual((datetime.fromisoformat('2000-01-01 00:00:00+00:00'),0), prepards)
     def test_update_sql_vals_id_birth_native_is_local(self):
         db = NtLite()
         table_name = 'users'
@@ -547,7 +537,9 @@ commit;
         sql, prepards = db._update_sql_vals(Row(id=0, birth=datetime.fromisoformat('2000-01-01T00:00:00')))
         self.assertEqual(f'update {table_name} set birth=? where id=?;', sql)
         if datetime.now().astimezone().tzinfo == timezone(timedelta(seconds=32400)):
-            self.assertEqual(('1999-12-31 15:00:00',0), prepards)
+            self.assertEqual((datetime.fromisoformat('2000-01-01 00:00:00'),0), prepards)#まだキャスト前なのでローカル時解釈とUTC変換されない
+            #self.assertEqual((datetime.fromisoformat('1999-12-31 15:00:00+00:00'),0), prepards)#まだキャスト前なので
+
     def test_update_sql_vals_id_birth_utc(self):
         db = NtLite()
         table_name = 'users'
@@ -556,7 +548,7 @@ commit;
         sql, prepards = db._update_sql_vals(Row(id=0, birth=datetime.fromisoformat('2000-01-01T00:00:00+00:00')))
         self.assertEqual(f'update {table_name} set birth=? where id=?;', sql)
         if datetime.now().astimezone().tzinfo == timezone(timedelta(seconds=32400)):
-            self.assertEqual(('2000-01-01 00:00:00',0), prepards)
+            self.assertEqual((datetime.fromisoformat('2000-01-01 00:00:00+00:00'),0), prepards)
     def test_update_sql_vals_id_birth_tokyo(self):
         db = NtLite()
         table_name = 'users'
@@ -564,7 +556,8 @@ commit;
         Row = db.get_row(table_name)
         sql, prepards = db._update_sql_vals(Row(id=0, birth=datetime.fromisoformat('2000-01-01T00:00:00+09:00')))
         self.assertEqual(f'update {table_name} set birth=? where id=?;', sql)
-        self.assertEqual(('1999-12-31 15:00:00',0), prepards)
+        self.assertEqual((datetime.fromisoformat('2000-01-01T00:00:00+09:00'),0), prepards)
+        #self.assertEqual(('1999-12-31 15:00:00',0), prepards)#まだキャスト前なので
     def test_update_sql_vals_id_is_male_false(self):
         db = NtLite()
         table_name = 'users'
@@ -582,19 +575,13 @@ commit;
         self.assertEqual(f'update {table_name} set is_male=? where id=?;', sql)
         self.assertEqual((1,0), prepards)
 
-
-
-
- 
-         
-
-    """
     def test_update_sql_vals(self):
         db = NtLite()
         table_name = 'users'
         db.exec(f"create table {table_name} (id integer not null primary key, name text not null, value real, img blob, is_male bool, birth datetime);")
+        # insert
         db.insert('users', (0, 'A', 10.1, bytes(2), True, datetime.fromisoformat('2000-01-01T00:00:00+00:00')))
-        db.insert('users', (1, 'B', 10.2, bytes(3), True, datetime.fromisoformat('2000-01-01T00:00:00+00:00')))
+        db.insert('users', (1, 'B', 10.2, bytes(3), False, datetime.fromisoformat('2000-01-02T00:00:00+00:00')))
         res = db.get("select * from users where id=?;", (0,))
         self.assertEqual(0, res.id)
         self.assertEqual('A', res.name)
@@ -602,12 +589,41 @@ commit;
         self.assertEqual(bytes(2), res.img)
         self.assertEqual(True, res.is_male)
         self.assertEqual('2000-01-01 00:00:00', res.birth)
+        res = db.get("select * from users where id=?;", (1,))
+        self.assertEqual(1, res.id)
+        self.assertEqual('B', res.name)
+        self.assertEqual(10.2, res.value)
+        self.assertEqual(bytes(3), res.img)
+        self.assertEqual(False, res.is_male)
+        self.assertEqual('2000-01-02 00:00:00', res.birth)
+        # update
+        Row = db.get_row('users')
+        db.update(Row(id=0, name='aaa'))
+        res = db.get("select * from users where id=?;", (0,))
+        self.assertEqual(0, res.id)
+        self.assertEqual('aaa', res.name) # ここだけ'A'から'aaa'に変わってるはず
+        self.assertEqual(10.1, res.value)
+        self.assertEqual(bytes(2), res.img)
+        self.assertEqual(True, res.is_male)
+        self.assertEqual('2000-01-01 00:00:00', res.birth)
+        res = db.get("select * from users where id=?;", (1,))
+        self.assertEqual(1, res.id)
+        self.assertEqual('B', res.name)
+        self.assertEqual(10.2, res.value)
+        self.assertEqual(bytes(3), res.img)
+        self.assertEqual(False, res.is_male)
+        self.assertEqual('2000-01-02 00:00:00', res.birth)
+    def test_update_birth_native_is_local(self):
+        db = NtLite()
+        table_name = 'users'
+        db.exec(f"create table {table_name} (id integer not null primary key, name text not null, value real, img blob, is_male bool, birth datetime);")
+        db.insert(table_name, (0, 'A', 10.1, bytes(2), True, datetime.fromisoformat('2000-01-01T00:00:00+00:00')))
         Row = db.get_row(table_name)
-        db._update_sql_vals(Row(id=0, name='aaa'))
-    """
-
+        db.update(Row(id=0, birth=datetime.fromisoformat('2000-01-01 00:00:00')))
+        res = db.get("select birth from users where id=?;", (0,))
+        if datetime.now().astimezone().tzinfo == timezone(timedelta(seconds=32400)):
+            self.assertEqual('1999-12-31 15:00:00', res[0])#キャスト済なのでネイティブはローカル時として解釈されUTC時に変換される
 
 
 if __name__ == '__main__':
     unittest.main()
-          

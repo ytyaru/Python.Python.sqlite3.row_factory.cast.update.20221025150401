@@ -71,9 +71,7 @@ class NtLite:
     def get_row(self, table_name):
         if table_name not in self.table_names(): raise ValueError('存在するテーブル名を指定してください。')
         cols = self.column_names(table_name)
-        #typ = namedtuple('Row', cols)
-        #return namedtuple(table_name, cols)(*([NOT_USE] * len(cols)))
-        return namedtuple(table_name, cols, defaults=([NOT_USE] * len(cols)))
+        return namedtuple(table_name, cols, defaults=tuple([NOT_USE] * len(cols)))
     def _update_sql_vals(self, row, where=None): #row,whereはget_row()の戻り値で得た型のインスタンスであること
         if isinstance(row, type): raise ValueError('引数rowは型でなくインスタンスを指定してください。')
         def is_update_id(): return hasattr(row, 'id') and hasattr(where, 'id') and row.id != where.id
@@ -100,7 +98,7 @@ class NtLite:
         if 0 == len(set_sql): raise ValueError('引数rowに更新するデータをセットしてください。')
         return f"update {table_name} set {set_sql} {where_sql(row)};", tuple(get_vals(row) + (get_vals(where) if where else [row.id]))
         #return f"update {table_name} set {set_sql} {where_sql(row)};", CastPy.to_sql_by_row(tuple(get_vals(row) + (get_vals(where) if where else [row.id])))
-    def update(self, table_name, value, where=None): return self._cast_exec(*self._update_sql_vals(table_name, value, where))
+    def update(self, row, where=None): return self._cast_exec(*self._update_sql_vals(row, where))
     def commit(self): return self.con.commit()
     def rollback(self): return self.con.rollback()
     @property
@@ -127,7 +125,6 @@ class CastPy:
     @classmethod
     def to_sql(cls, v):
         if isinstance(v, bool): return 1 if v else 0
-        #elif isinstance(v, datetime): return f"{v:%Y-%m-%d %H:%M:%S}"
         elif isinstance(v, datetime): return f"{AwareDateTime.to_utc(AwareDateTime.if_native_to_local(v)):%Y-%m-%d %H:%M:%S}"
         else: return v
     @classmethod
