@@ -8,13 +8,13 @@ update文をラップする。
 
 * [リポジトリ][]
 
-[リポジトリ]:https://github.com/ytyaru/Python.Python.sqlite3.row_factory.cast.update.20221025150401
-[DEMO]:https://ytyaru.github.io/Python.Python.sqlite3.row_factory.cast.update.20221025150401/
+[リポジトリ]:https://github.com/ytyaru/Python.sqlite3.row_factory.cast.update.20221025150401
+[DEMO]:https://ytyaru.github.io/Python.sqlite3.row_factory.cast.update.20221025150401/
 
 ## 実行
 
 ```sh
-NAME='Python.Python.sqlite3.row_factory.cast.update.20221025150401'
+NAME='Python.sqlite3.row_factory.cast.update.20221025150401'
 git clone https://github.com/ytyaru/$NAME
 cd $NAME/src
 ./run.py

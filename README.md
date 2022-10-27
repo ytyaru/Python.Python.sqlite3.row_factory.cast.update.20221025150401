@@ -8,9 +8,9 @@ Wrap update statements.
 
 # DEMO
 
-* [demo](https://ytyaru.github.io/Python.Python.sqlite3.row_factory.cast.update.20221025150401/)
+* [demo](https://ytyaru.github.io/Python.sqlite3.row_factory.cast.update.20221025150401/)
 
-![img](https://github.com/ytyaru/Python.Python.sqlite3.row_factory.cast.update.20221025150401/blob/master/doc/0.png?raw=true)
+![img](https://github.com/ytyaru/Python.sqlite3.row_factory.cast.update.20221025150401/blob/master/doc/0.png?raw=true)
 
 # Features
 
@@ -68,8 +68,8 @@ pyenv install 3.10.5
 ## this works
 
 ```sh
-git clone https://github.com/ytyaru/Python.Python.sqlite3.row_factory.cast.update.20221025150401
-cd Python.Python.sqlite3.row_factory.cast.update.20221025150401/src
+git clone https://github.com/ytyaru/Python.sqlite3.row_factory.cast.update.20221025150401
+cd Python.sqlite3.row_factory.cast.update.20221025150401/src
 ```
 
 # Usage
